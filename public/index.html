@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Real-Time Chat</title>
+    <style>
+      /* Basic styling for clarity */
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+      #messages {
+        border: 1px solid #ccc;
+        height: 300px;
+        overflow-y: scroll;
+        padding: 10px;
+      }
+      input {
+        padding: 10px;
+        margin: 5px 0;
+        width: 80%;
+      }
+      button {
+        padding: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>WebSocket Chat</h2>
+    <div id="messages"></div>
+    <input id="username" type="text" placeholder="Username" />
+    <input id="message" type="text" placeholder="Message" />
+    <button id="sendButton">Send</button>
+
+    <script>
+      // Function to handle login and retrieve the JWT token
+      function HandleLogin() {
+        fetch("http://localhost:8080/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            username: "testuser", // Replace with actual username
+            password: "password123", // Replace with actual password
+          }),
+        })
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Login failed!");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            console.log("JWT Token:", data.token);
+            // Store the token for future use
+            localStorage.setItem("jwtToken", data.token);
+            connectWebSocket(data.token); // Connect WebSocket after login
+          })
+          .catch((error) => console.error("Login Error:", error));
+
+        console.log("Login function triggered");
+      }
+
+      // Function to establish WebSocket connection with JWT token
+      function connectWebSocket(token) {
+        const socket = new WebSocket(`ws://localhost:8080/ws?token=${token}`);
+
+        socket.onopen = () => {
+          console.log("Connected to WebSocket server");
+        };
+
+        socket.onmessage = (event) => {
+          const msg = JSON.parse(event.data);
+          const messagesDiv = document.getElementById("messages");
+          const messageEl = document.createElement("div");
+          messageEl.textContent = `${msg.username}: ${msg.message} (${msg.timestamp})`;
+          messagesDiv.appendChild(messageEl);
+        };
+
+        socket.onerror = (error) => {
+          console.error("WebSocket Error:", error);
+        };
+
+        socket.onclose = () => {
+          console.warn("WebSocket connection closed");
+        };
+
+        // Sending messages
+        document
+          .getElementById("sendButton")
+          .addEventListener("click", () => sendMessage(socket));
+      }
+
+      // Function to send messages through WebSocket
+      function sendMessage(socket) {
+        const username = document.getElementById("username").value;
+        const message = document.getElementById("message").value;
+        const payload = {
+          username,
+          message,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify(payload));
+        } else {
+          console.error(
+            "WebSocket is not open. Ready state:",
+            socket.readyState
+          );
+        }
+
+        // Clear the input field
+        document.getElementById("message").value = "";
+      }
+
+      // Trigger login when the page loads
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("DOMContentLoaded event fired");
+        login();
+      });
+    </script>
+  </body>
+</html>
