@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+
 	"goChat/internal/models"
 	"goChat/internal/services"
 	"net/http"
@@ -25,4 +26,24 @@ func CreateMessageHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(fmt.Sprintf("Message saved with ID: %d", newID)))
+}
+
+func GetMessageHistoryHandler(w http.ResponseWriter, r *http.Request) {
+	senderID := r.URL.Query().Get("senderId")
+	recipientID := r.URL.Query().Get("recipientId")
+	chatRoom := r.URL.Query().Get("chatRoom")
+
+	if (senderID == "" || recipientID == "") && chatRoom == "" {
+		http.Error(w, "Invalid parameters: senderId and recipientId or chatRoom must be provided", http.StatusBadRequest)
+		return
+	}
+
+	messages, err := services.GetMessageHistory(senderID, recipientID, chatRoom)
+	if err != nil {
+		http.Error(w, "Failed to fetch messages", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(messages)
 }

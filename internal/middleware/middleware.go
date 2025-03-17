@@ -48,8 +48,18 @@ func ValidateJWT(r *http.Request, jwtSecret []byte) (*CustomClaims, error) {
 // AuthMiddleware verifies the JWT in the Authorization header
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Extract the token from query parameters for WebSocket connections
-		tokenString := r.URL.Query().Get("token")
+		var tokenString string
+
+		// Extract token from Authorization header
+		authHeader := r.Header.Get("Authorization")
+		if authHeader != "" && len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+			tokenString = authHeader[7:]
+		} else {
+			// Fallback: Check query parameters for WebSocket connections
+			tokenString = r.URL.Query().Get("token")
+		}
+
+		// If token is still empty, return an error
 		if tokenString == "" {
 			http.Error(w, "Missing token", http.StatusUnauthorized)
 			return

@@ -12,7 +12,6 @@ import (
 	"goChat/internal/websockets"
 
 	"github.com/joho/godotenv"
-	"golang.org/x/crypto/bcrypt"
 )
 
 func main() {
@@ -40,18 +39,7 @@ func main() {
 
 	database.InitDB(dbConnectionString)
 
-	// 🔹 Move password hashing here, before starting the server
-	password := "adminpassword"
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		fmt.Println("Error hashing password:", err)
-		return
-	}
-
-	fmt.Println("Hashed Password:", string(hashedPassword)) // 🔹 Now this will print before the server starts!
 	// Create a new Hub for managing WebSocket clients and messages
-
 	hub := websockets.NewHub()
 
 	// Start handling WebSocket messages in a separate goroutine
@@ -62,6 +50,9 @@ func main() {
 
 	// Authentication route
 	r.HandleFunc("/login", handlers.HandleLogin)
+
+	// Messages route
+	r.Handle("/messages/history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMessageHistoryHandler)))
 
 	// WebSocket route
 	r.Handle("/ws", middleware.JWTMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
