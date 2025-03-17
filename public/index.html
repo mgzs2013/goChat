@@ -5,23 +5,26 @@
     <title>Real-Time Chat</title>
     <style>
       /* Basic styling for clarity */
-      body {
-        font-family: Arial, sans-serif;
-        padding: 20px;
-      }
       #messages {
-        border: 1px solid #ccc;
-        height: 300px;
-        overflow-y: scroll;
+        background: #f9f9f9;
+        border-radius: 8px;
         padding: 10px;
+        font-size: 14px;
+        line-height: 1.4;
       }
-      input {
-        padding: 10px;
-        margin: 5px 0;
-        width: 80%;
+      input,
+      button {
+        border: 1px solid #ccc;
+        border-radius: 4px;
       }
       button {
-        padding: 10px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
       }
     </style>
   </head>
@@ -39,8 +42,8 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            username: "testuser", // Replace with actual username
-            password: "password123", // Replace with actual password
+            username: "adminuser", // Replace with actual username
+            password: "adminpassword", // Replace with actual password
           }),
         })
           .then((response) => {
@@ -72,8 +75,9 @@
           const msg = JSON.parse(event.data);
           const messagesDiv = document.getElementById("messages");
           const messageEl = document.createElement("div");
-          messageEl.textContent = `${msg.username}: ${msg.message} (${msg.timestamp})`;
+          messageEl.textContent = `User ${msg.sender_id}: ${msg.content} (${msg.timestamp})`;
           messagesDiv.appendChild(messageEl);
+          messagesDiv.scrollTop = messagesDiv.scrollHeight;
         };
 
         socket.onerror = (error) => {
@@ -81,7 +85,9 @@
         };
 
         socket.onclose = () => {
-          console.warn("WebSocket connection closed");
+          console.warn("WebSocket connection closed. Please log in again.");
+          alert("Session expired. Please log in again.");
+          HandleLogin();
         };
 
         // Sending messages
@@ -92,12 +98,12 @@
 
       // Function to send messages through WebSocket
       function sendMessage(socket) {
-        const username = document.getElementById("username").value;
+        const sender_id = 1; // Replace with the actual SenderID (e.g., fetched from server-side claims)
         const message = document.getElementById("message").value;
         const payload = {
-          username,
-          message,
-          timestamp: new Date().toLocaleTimeString(),
+          sender_id,
+          content: message,
+          timestamp: new Date().toISOString(), // Use ISO format for better compatibility
         };
 
         if (socket.readyState === WebSocket.OPEN) {
@@ -116,7 +122,7 @@
       // Trigger login when the page loads
       document.addEventListener("DOMContentLoaded", () => {
         console.log("DOMContentLoaded event fired");
-        login();
+        HandleLogin();
       });
     </script>
   </body>

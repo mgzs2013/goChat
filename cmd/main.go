@@ -48,6 +48,11 @@ func main() {
 	// Setup router and define routes
 	r := http.NewServeMux()
 
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Welcome to the Real-Time Chat Server!"))
+	})
+
 	// Authentication route
 	r.HandleFunc("/login", handlers.HandleLogin)
 

@@ -23,7 +23,14 @@ type LoginResponse struct {
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("Error decoding request body: %v", err)
 		http.Error(w, "Invalid input", http.StatusBadRequest)
+		return
+	}
+
+	if req.Username == "" || req.Password == "" {
+		log.Printf("Invalid input: %+v", req)
+		http.Error(w, "Invalid input: Username and Password are required", http.StatusBadRequest)
 		return
 	}
 
@@ -43,6 +50,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	log.Printf("Login successful for username: %s", req.Username)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(LoginResponse{
 		AccessToken:  accessToken,
