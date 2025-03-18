@@ -35,14 +35,14 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use service layer for authentication
-	userID, role, err := services.AuthenticateUser(req.Username, req.Password)
+	ID, role, err := services.AuthenticateUser(req.Username, req.Password)
 	if err != nil {
 		log.Println("Login failed:", err)
 		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 		return
 	}
 
-	accessToken, refreshToken, err := services.GenerateToken(userID, role)
+	accessToken, refreshToken, err := services.GenerateToken(ID, req.Username, role)
 	if err != nil {
 		log.Println("Error generating tokens:", err)
 		http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)
@@ -73,20 +73,29 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Fetch the user role from the repository
 	role, err := repository.GetUserRole(userID)
 	if err != nil {
 		http.Error(w, "Failed to fetch user role", http.StatusInternalServerError)
 		return
 	}
 
+	// Fetch username for the user (optional based on your requirements)
+	username, err := repository.GetUserRole(userID)
+	if err != nil {
+		http.Error(w, "Failed to fetch username", http.StatusInternalServerError)
+		return
+	}
+
 	// Generate new tokens (access token and refresh token)
-	accessToken, newRefreshToken, err := services.GenerateToken(userID, role)
+	accessToken, newRefreshToken, err := services.GenerateToken(userID, username, role)
 	if err != nil {
 		http.Error(w, "Failed to generate new tokens", http.StatusInternalServerError)
 		return
 	}
 
 	// Send the new tokens in the response
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{
 		"accessToken":  accessToken,
 		"refreshToken": newRefreshToken,

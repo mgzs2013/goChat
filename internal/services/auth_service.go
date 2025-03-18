@@ -4,15 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"goChat/internal/database"
+	"os"
 
 	"goChat/pkg"
 	"log"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func AuthenticateUser(username, password string) (int, string, error) {
+func AuthenticateUser(username, password string) (int64, string, error) {
 	userID, role, err := getUserCredentials(username, password) // Assume this is implemented
 	if err != nil {
 		return 0, "", errors.New("invalid credentials")
@@ -20,18 +22,39 @@ func AuthenticateUser(username, password string) (int, string, error) {
 	return userID, role, nil
 }
 
-func GenerateToken(userID int, role string) (string, string, error) {
-	accessToken, err := pkg.GenerateToken(fmt.Sprintf("user_%d", userID), role)
-	if err != nil {
-		return "", "", err
+func GenerateToken(ID int64, username, role string) (string, string, error) {
+	// Fetch the secret from the environment
+	secret := os.Getenv("JWT_SECRET")
+	if len(secret) == 0 {
+		return "", "", fmt.Errorf("JWT secret is missing")
 	}
 
-	refreshToken, err := GenerateRefreshToken(userID)
+	// Generate Access Token
+	accessTokenClaims := jwt.MapClaims{
+		"id":       ID,                                   // User ID
+		"username": username,                             // Username
+		"role":     role,                                 // User role
+		"exp":      time.Now().Add(2 * time.Hour).Unix(), // Token expires in 2 hours
+	}
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
+	accessTokenString, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
-		return "", "", err
+		return "", "", fmt.Errorf("failed to generate access token: %w", err)
 	}
 
-	return accessToken, refreshToken, nil
+	// Generate Refresh Token
+	refreshTokenClaims := jwt.StandardClaims{
+		ExpiresAt: time.Now().Add(7 * 24 * time.Hour).Unix(), // Refresh token expires in 7 days
+		IssuedAt:  time.Now().Unix(),
+		Issuer:    "auth_service",
+	}
+	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims)
+	refreshTokenString, err := refreshToken.SignedString([]byte(secret))
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate refresh token: %w", err)
+	}
+
+	return accessTokenString, refreshTokenString, nil
 }
 
 func CheckPassword(password, hashedPassword string) bool {
@@ -43,8 +66,8 @@ func CheckPassword(password, hashedPassword string) bool {
 	return true
 }
 
-func getUserCredentials(username, password string) (int, string, error) {
-	var userID int
+func getUserCredentials(username, password string) (int64, string, error) {
+	var userID int64
 	var role string
 	var storedHash string
 
@@ -68,7 +91,7 @@ func getUserCredentials(username, password string) (int, string, error) {
 }
 
 // GenerateRefreshToken creates and stores a new refresh token in the database
-func GenerateRefreshToken(userID int) (string, error) {
+func GenerateRefreshToken(userID int64) (string, error) {
 	// Use GenerateRandomToken to generate the refresh token
 	refreshToken, err := pkg.GenerateRandomToken()
 	if err != nil {
@@ -98,8 +121,8 @@ func GenerateRefreshToken(userID int) (string, error) {
 }
 
 // ValidateRefreshToken checks the validity of a refresh token in the database
-func ValidateRefreshToken(refreshToken string) (int, error) {
-	var userID int
+func ValidateRefreshToken(refreshToken string) (int64, error) {
+	var userID int64
 	var expiresAt time.Time
 
 	// Query the refresh token from the database

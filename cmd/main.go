@@ -49,8 +49,7 @@ func main() {
 	r := http.NewServeMux()
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("Welcome to the Real-Time Chat Server!"))
+		http.ServeFile(w, r, "public/index.html") // Serve the chat page
 	})
 
 	// Authentication route

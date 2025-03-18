@@ -9,7 +9,7 @@ import (
 )
 
 // GetUserRole fetches the role name for a given user ID
-func GetUserRole(userID int) (string, error) {
+func GetUserRole(userID int64) (string, error) {
 	var roleName string
 	err := database.Pool.QueryRow(`
         SELECT r.name
