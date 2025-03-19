@@ -54,10 +54,11 @@
             return response.json();
           })
           .then((data) => {
-            console.log("JWT Token:", data.token);
+            console.log("JWT Token:", data.accessToken);
+            console.log("Server Response Data:");
             // Store the token for future use
-            localStorage.setItem("jwtToken", data.token);
-            connectWebSocket(data.token); // Connect WebSocket after login
+            localStorage.setItem("jwtToken", data.accessToken);
+            connectWebSocket(data.accessToken); // Connect WebSocket after login
           })
           .catch((error) => console.error("Login Error:", error));
 

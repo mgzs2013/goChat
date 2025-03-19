@@ -22,12 +22,19 @@ type LoginResponse struct {
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
+
+	// Log the start of the request
+	log.Println("HandleLogin triggered")
+
+	// Decode the request body
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("Error decoding request body: %v", err)
 		http.Error(w, "Invalid input", http.StatusBadRequest)
 		return
 	}
+	log.Printf("Decoded LoginRequest: %+v", req)
 
+	// Check for empty username or password
 	if req.Username == "" || req.Password == "" {
 		log.Printf("Invalid input: %+v", req)
 		http.Error(w, "Invalid input: Username and Password are required", http.StatusBadRequest)
@@ -35,27 +42,38 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use service layer for authentication
+	log.Println("Authenticating user...")
 	ID, role, err := services.AuthenticateUser(req.Username, req.Password)
 	if err != nil {
 		log.Println("Login failed:", err)
 		http.Error(w, "Invalid username or password", http.StatusUnauthorized)
 		return
 	}
+	log.Printf("Authentication successful for user: %s (ID: %d, Role: %s)", req.Username, ID, role)
 
+	// Generate access and refresh tokens
+	log.Println("Generating tokens...")
 	accessToken, refreshToken, err := services.GenerateToken(ID, req.Username, role)
 	if err != nil {
 		log.Println("Error generating tokens:", err)
 		http.Error(w, "Failed to generate tokens", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("Generated AccessToken: %s", accessToken)
+	log.Printf("Generated RefreshToken: %s", refreshToken)
 
+	// Prepare the JSON response
 	w.Header().Set("Content-Type", "application/json")
 	log.Printf("Login successful for username: %s", req.Username)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(LoginResponse{
+	if err := json.NewEncoder(w).Encode(LoginResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
-	})
+	}); err != nil {
+		log.Printf("Error encoding response: %v", err)
+	} else {
+		log.Println("Response successfully sent to client")
+	}
 }
 
 // RefreshTokenHandler generates new access and refresh tokens
@@ -88,7 +106,7 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate new tokens (access token and refresh token)
-	accessToken, newRefreshToken, err := services.GenerateToken(userID, username, role)
+	accessToken, refreshToken, err := services.GenerateToken(userID, username, role)
 	if err != nil {
 		http.Error(w, "Failed to generate new tokens", http.StatusInternalServerError)
 		return
@@ -96,8 +114,8 @@ func RefreshTokenHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Send the new tokens in the response
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
-		"accessToken":  accessToken,
-		"refreshToken": newRefreshToken,
+	json.NewEncoder(w).Encode(LoginResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
 	})
 }
