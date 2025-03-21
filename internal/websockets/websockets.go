@@ -4,10 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	"goChat/config"
+	"goChat/pkg"
 
-	"goChat/internal/database"
-	"goChat/internal/middleware"
 	"goChat/internal/models"
 
 	"github.com/gorilla/websocket"
@@ -29,31 +27,37 @@ var clients = make(map[*websocket.Conn]*models.User)
 // A broadcast channel for incoming messages.
 var broadcast = make(chan models.Message)
 
-func HandleConnections(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	claims, err := middleware.ValidateJWT(r, config.JwtSecret)
-	if err != nil {
-		log.Printf("JWT validation failed: %v", err)
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+func HandleWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	log.Println("[DEBUG] HandleWebsocket invoked")
+
+	// Extract the token from the query parameters
+	tokenString := r.URL.Query().Get("accessToken")
+	if tokenString == "" {
+		log.Println("[ERROR] Access token is missing in query parameters")
+		http.Error(w, "Access token required", http.StatusBadRequest)
 		return
 	}
+	log.Printf("[DEBUG] Extracted Token: %s", tokenString)
 
-	var userID int64
-	err = database.Pool.QueryRow("SELECT id FROM users WHERE username = $1", claims.Username).Scan(&userID)
+	// Validate the token
+	claims, err := pkg.ValidateToken(tokenString)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusUnauthorized)
+		log.Println("[ERROR] Token validation failed:", err)
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
 		return
 	}
+	log.Println("[DEBUG] Token validated successfully. Claims:", claims)
 
-	ws, err := upgrader.Upgrade(w, r, nil)
+	// Upgrade the connection to WebSocket
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("WebSocket upgrade failed: %v", err)
-		http.Error(w, "Failed to upgrade WebSocket", http.StatusInternalServerError)
+		log.Println("[ERROR] WebSocket upgrade failed:", err)
 		return
 	}
-	defer hub.RemoveClient(ws)
+	log.Println("[DEBUG] WebSocket connection established")
+	defer conn.Close()
 
-	user := &models.User{ID: userID, Username: claims.Username}
-	hub.RegisterClient(ws, user)
+	// WebSocket handling logic here
 }
 
 // HandleMessages listens on the broadcast channel and sends messages to all clients.

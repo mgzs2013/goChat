@@ -59,9 +59,9 @@ func main() {
 	r.Handle("/messages/history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMessageHistoryHandler)))
 
 	// WebSocket route
-	r.Handle("/ws", middleware.JWTMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		websockets.HandleConnections(hub, w, r)
-	})))
+	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		websockets.HandleWebsocket(hub, w, r)
+	})
 
 	// Role-based routes
 	r.Handle("/admin", middleware.RoleMiddleware("admin", http.HandlerFunc(handlers.AdminHandler)))
@@ -69,8 +69,13 @@ func main() {
 
 	// Start the server
 	log.Println("Server started on :8080")
-	err = http.ListenAndServe(":8080", r)
-	if err != nil {
-		log.Fatal("ListenAndServe error:", err)
+	server := &http.Server{
+		Addr:    ":8080",                               // Server address and port
+		Handler: middleware.CORS(http.DefaultServeMux), // Apply CORS middleware
+	}
+
+	// Start the server
+	if err := server.ListenAndServe(); err != nil {
+		panic(err) // Handle errors gracefully in production
 	}
 }

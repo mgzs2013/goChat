@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>goChat</title>
+    <style>
+      /* Basic styling for clarity */
+      #messages {
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      input,
+      button {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>WebSocket Chat</h2>
+    <div id="messages"></div>
+    <input id="username" type="text" placeholder="Username" />
+    <input id="message" type="text" placeholder="Message" />
+    <button id="sendButton">Send</button>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,41 +1,62 @@
 package middleware
 
 import (
-	"fmt"
+	// "fmt"
+	// "goChat/pkg"
+	"context"
 	"goChat/pkg"
+	"log"
 	"net/http"
-	"strings"
+	// "strings"
 )
 
 // JWTMiddleware validates the token and ensures protected routes are accessible only by authorized users
 func JWTMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Get the token from the Authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			http.Error(w, "Authorization header missing", http.StatusUnauthorized)
-			return
-		}
+		var tokenString string
 
-		// Split "Bearer <token>"
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
-			return
+		// Check if this is a WebSocket request by looking for the query parameter
+		if r.URL.Query().Has("accessToken") {
+			tokenString = r.URL.Query().Get("accessToken")
+			if tokenString == "" {
+				log.Println("Access token is missing in query parameters")
+				http.Error(w, "Access token required", http.StatusBadRequest)
+				return
+			}
+			log.Printf("Access token from query parameters: %s", tokenString)
+
+		} else {
+			// Extract the token from the Authorization header for standard HTTP requests
+			authHeader := r.Header.Get("Authorization")
+			if authHeader == "" {
+				log.Println("Authorization header is missing")
+				http.Error(w, "Authorization required", http.StatusUnauthorized)
+				return
+			}
+
+			// Remove "Bearer " prefix from the Authorization header
+			if len(authHeader) > 7 && authHeader[:7] == "Bearer " {
+				tokenString = authHeader[7:]
+			} else {
+				log.Println("Invalid Authorization header format")
+				http.Error(w, "Invalid Authorization header format", http.StatusUnauthorized)
+				return
+			}
+			log.Printf("Access token from Authorization header: %s", tokenString)
 		}
-		tokenString := parts[1]
 
 		// Validate the token
-		claims, err := pkg.ValidateToken(tokenString) // Use the updated ValidateToken function
+		claims, err := pkg.ValidateToken(tokenString)
 		if err != nil {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			log.Println("Token validation failed:", err)
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		// Token is valid; you can extract claims if needed
-		fmt.Printf("Token validated successfully. Claims: %+v\n", claims)
+		log.Println("Token validated successfully. Claims:", claims)
 
-		// Proceed to the next handler
-		next.ServeHTTP(w, r)
+		// Add claims to the request context (optional)
+		ctx := context.WithValue(r.Context(), "claims", claims)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

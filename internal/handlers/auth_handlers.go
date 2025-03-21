@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"goChat/internal/repository"
 	"goChat/internal/services" // Import your service layer
@@ -23,6 +24,13 @@ type LoginResponse struct {
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 
+	fmt.Println("Method:", r.Method)
+	fmt.Println("Headers:", r.Header)
+
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid method", http.StatusMethodNotAllowed)
+		return
+	}
 	// Log the start of the request
 	log.Println("HandleLogin triggered")
 
