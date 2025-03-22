@@ -48,10 +48,6 @@ func main() {
 	// Setup router and define routes
 	r := http.NewServeMux()
 
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "public/index.html") // Serve the chat page
-	})
-
 	// Authentication route
 	r.HandleFunc("/login", handlers.HandleLogin)
 
@@ -69,13 +65,7 @@ func main() {
 
 	// Start the server
 	log.Println("Server started on :8080")
-	server := &http.Server{
-		Addr:    ":8080",                               // Server address and port
-		Handler: middleware.CORS(http.DefaultServeMux), // Apply CORS middleware
-	}
+	wrappedRouter := middleware.CORS(r)
+	http.ListenAndServe(":8080", wrappedRouter)
 
-	// Start the server
-	if err := server.ListenAndServe(); err != nil {
-		panic(err) // Handle errors gracefully in production
-	}
 }
