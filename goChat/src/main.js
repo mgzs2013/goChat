@@ -1,26 +1,22 @@
-
-
-
- 
- // Function to handle login and retrieve the JWT token
             function HandleLogin() {
-              fetch("http://localhost:8080/login", {
+            fetch("http://localhost:8080/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  username: "adminuser", // Replace with actual username
-                  password: "adminpassword", // Replace with actual password
+                  username: "adminuser",
+                  password: "adminpassword"
                 }),
               })
                 .then((response) => {
+                  console.log("Response Status:", response.status);
                   if (!response.ok) {
                     throw new Error("Login failed!");
                   }
                   return response.json();
                 })
                 .then((data) => {
-                  console.log("JWT Token:", data.accessToken);
-                  console.log("Server Response Data:");
+                  console.log("Response Data:", data)
+                  
                   // Store the token for future use
                   localStorage.setItem("jwtToken", data.accessToken);
                   console.log("Stored Token:", localStorage.getItem("jwtToken"));
@@ -29,14 +25,14 @@
                 })
                 .catch((error) => console.error("Login Error:", error));
 
-              console.log("Login function triggered");
+              
             }
 
             // Function to establish WebSocket connection with JWT token
          function connectWebSocket() {
               const token = import.meta.env.VITE_ACCESS_TOKEN;
-      const socket = new WebSocket(`ws://localhost:8080/ws?accessToken=${token}`);
-      console.log("Access Token:", token);
+              const socket = new WebSocket(`ws://localhost:8080/ws?accessToken=${token}`);
+              console.log("Access Token:", token);
 
               socket.onopen = () => {
                 console.log("[DEBUG] WebSocket connected");
