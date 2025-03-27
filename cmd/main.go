@@ -23,6 +23,8 @@ func main() {
 		fmt.Println("Successfully loaded .env file")
 	}
 
+	log.Println("Main function invoked")
+
 	// Check if the secret is loaded
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
@@ -41,6 +43,8 @@ func main() {
 
 	// Create a new Hub for managing WebSocket clients and messages
 	hub := websockets.NewHub()
+
+	go hub.Run() // This is the key addition
 
 	// Start handling WebSocket messages in a separate goroutine
 	go websockets.HandleMessages(hub)

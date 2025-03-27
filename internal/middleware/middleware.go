@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"goChat/pkg"
+	"goChat/internal/services"
 
 	"net/http"
 	"os"
@@ -100,10 +100,10 @@ func RoleMiddleware(requiredRole string, next http.Handler) http.Handler {
 			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
 			return
 		}
-		tokenString := parts[1]
+		signedToken := parts[1]
 
 		// Validate the token and extract claims
-		claims, err := pkg.ValidateToken(tokenString)
+		claims, err := services.ValidateToken(signedToken)
 		if err != nil {
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return

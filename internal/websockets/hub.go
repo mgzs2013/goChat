@@ -47,3 +47,16 @@ func (hub *Hub) BroadcastMessage(msg models.Message) {
 		}
 	}
 }
+
+func (hub *Hub) Run() {
+	for {
+		select {
+		case conn := <-hub.Register:
+			hub.RegisterClient(conn, nil) // You might need to modify this based on your current implementation
+		case conn := <-hub.Unregister:
+			hub.RemoveClient(conn)
+		case msg := <-hub.Broadcast:
+			hub.BroadcastMessage(msg)
+		}
+	}
+}
