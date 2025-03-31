@@ -3,16 +3,48 @@ package services
 import (
 	"goChat/internal/database"
 	"goChat/internal/models"
+	"strconv"
 )
 
-func StoreMessage(msg models.Message) (int, error) {
+func StoreMessage(msg models.Message) (int64, error) {
 	query := `
         INSERT INTO messages (sender_id, recipient_id, chat_room, content, timestamp) 
         VALUES ($1, $2, $3, $4, DEFAULT) RETURNING id
     `
-	var newID int
+	var newID int64
 	err := database.Pool.QueryRow(query, msg.SenderID, msg.RecipientID, msg.ChatRoom, msg.Content).Scan(&newID)
 	return newID, err
+}
+
+func GetRecentMessages(limit string) ([]models.Message, error) {
+	query := `
+		SELECT id, sender_id, recipient_id, chat_room, content, timestamp
+		FROM messages
+		ORDER BY timestamp DESC
+		LIMIT $1
+	`
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		limitInt = 50 // Default limit
+	}
+
+	rows, err := database.Pool.Query(query, limitInt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []models.Message
+	for rows.Next() {
+		var msg models.Message
+		if err := rows.Scan(&msg.ID, &msg.SenderID, &msg.RecipientID, &msg.ChatRoom, &msg.Content, &msg.Timestamp); err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+
+	return messages, nil
 }
 
 func GetMessageHistory(senderID, recipientID, chatRoom string) ([]models.Message, error) {

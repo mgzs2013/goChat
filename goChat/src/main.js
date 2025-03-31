@@ -1,112 +1,120 @@
+import websocketService from "./services/websocketService";
+
+// Define action types as constants
+const ActionTypes = {
+    LOGIN_CONFIRMATION: 'LOGIN_CONFIRMATION',
+    WELCOME: 'WELCOME',
+    ERROR: 'ERROR',
+};
+
+// Main function to handle login
 async function HandleLoginRequest() {
-  try {
-    const response = await fetch("http://localhost:8080/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(
-        {
-          username: "adminuser",
-          password: "adminpassword",
-        }),
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+    try {
+        const data = await loginUser(username, password);
+        localStorage.setItem("jwtToken", data.accessToken);
+        
+        // Attempt to set up WebSocket connection after successful login
+        const socket = await setupWebSocket(data.accessToken, data.id);
+        console.log("WebSocket connection established:", socket);
+        
+        return data; // Return data for further processing if needed
+    } catch (error) {
+        console.error("Login Error:", error.message);
+        throw error; // Re-throw for handling by caller
+    }
+}
+
+
+// Function to perform the login request
+async function loginUser(username, password) {
+    const API_URL = import.meta.env.VITE_API_BASE_URL;
+    const response = await fetch(`${API_URL}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
     });
+
     console.log("Raw Response:", response);
     console.log("Response Status:", response.status);
 
-    // Check if the response is okay (status 2xx)
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+        throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    // Try to parse the JSON response
-    // const text = await response.text();
-    // let data;
-    // try {
-    //   data = JSON.parse(text);
-    // } catch (e) {
-    //   console.error("Invalid JSON received from server:", e);
-    //   throw new Error("Unexpected response format");
-    // }
     const data = await response.json();
     console.log("Parsed Response:", data);
-
-    console.log("Response Data:", data);
-
-    // Handle success (e.g., store token, connect WebSocket)
-    localStorage.setItem("jwtToken", data.accessToken);
-    console.log("Stored Token:", localStorage.getItem("jwtToken"));
-    connectWebSocket();
-    console.log("accessToken:", data.accessToken);
-  } catch (error) {
-    console.error("Login Error:", error.message);
-  }
+    return data; // Return the parsed data
 }
 
-// Function to establish WebSocket connection with JWT token
-function connectWebSocket() {
-  var secret = import.meta.env.VITE_ACCESS_TOKEN;
-  console.log("secret var:", secret)
-  const token = localStorage.getItem("jwtToken"); // Retrieve the stored token
-  if (!token) {
-    console.error("[ERROR] No access token found in local storage.");
-    alert("Session expired. Please log in again.");
-    return;
-  }
-  const socket = new WebSocket(`ws://localhost:8080/ws?accessToken=${token}`);
-  console.log("Access Token:", token);
-  console.log("Loaded Environment Variables:", import.meta.env);
+// Function to set up the WebSocket connection and message handling
+async function setupWebSocket(accessToken, userId) {
+    
+    const socket = websocketService.connect(accessToken).then(() => {
+        console.log("Websocket connection established. You can now send messages.");
+    }).catch(error => {
+        console.error("Failed to connect to WebSocket", error);
+    });
 
+    websocketService.sendMessage({
+        type: ActionTypes.LOGIN_CONFIRMATION,
+        sender_id: userId || 'anonymous',
+    });
 
-  socket.onopen = () => {
-    console.log("[DEBUG] WebSocket connected");
-  };
+    websocketService.onMessage((message) => {
+        console.log("Login handler received message:", message);
+        handleWebSocketMessage(message);
+    });
 
-  socket.onerror = (error) => {
-    console.error("[ERROR] WebSocket error:", error);
-  };
-
-  socket.onclose = (event) => {
-    console.warn(
-      "[DEBUG] WebSocket connection closed. Code:",
-      event.code,
-      "Reason:",
-      event.reason
-    );
-    alert("Session expired. Please log in again.");
-  };
-
-  socket.onmessage = (event) => {
-    console.log("[DEBUG] Message from server:", event.data);
-  };
+    return socket; // Return the socket if needed
 }
 
-// Function to send messages through WebSocket
-export function sendMessage(socket) {
-  const sender_id = 1; // Replace with the actual SenderID (e.g., fetched from server-side claims)
-  const message = document.getElementById("message").value;
-  const payload = {
-    sender_id,
-    content: message,
-    timestamp: new Date().toISOString(), // Use ISO format for better compatibility
-  };
-
-  if (socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify(payload));
-  } else {
-    console.error(
-      "WebSocket is not open. Ready state:",
-      socket.readyState
-    );
-  }
-
-  // Clear the input field
-  document.getElementById("message").value = "";
+// Function to handle sending messages
+function sendMessage() {
+    const messageInput = document.getElementById("message-input").value; // Get message input
+    console.log("Message:", messageInput)
+    websocketService.sendMessage(messageInput); // Call the sendMessage method from WebSocketService
+    document.getElementById("message-input").value = ""; // Clear input
 }
 
-// Trigger login when the page loads
+
+// Function to handle incoming WebSocket messages
+function handleWebSocketMessage(message) {
+    if (message.type === ActionTypes.WELCOME) {
+        displayWelcomeMessage(message.content);
+    } else if (message.type === ActionTypes.ERROR) {
+        handleError(message.error);
+    }
+}
+
+// Function to display a welcome message
+function displayWelcomeMessage(content) {
+    console.log("Welcome message:", content);
+    const messageElement = document.getElementById('welcome-message');
+    if (messageElement) {
+        messageElement.textContent = content;
+        messageElement.classList.remove('hidden');
+    }
+}
+
+// Function to handle errors
+function handleError(error) {
+    console.error("Server error:", error);
+    alert(`Server error: ${error}`);
+}
+
+// Event listener for login form submission
+document.getElementById("login-form").addEventListener("submit", (event) => {
+    event.preventDefault(); // Prevent default form submission
+    HandleLoginRequest(); // Trigger the login function
+});
+
+// Add event listener for the send button
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("DOMContentLoaded event fired");
-  HandleLoginRequest();
-}
-);
+    document.getElementById("sendButton").addEventListener("click", sendMessage); // Attach event listener
+});
 
+
+export default HandleLoginRequest;
 

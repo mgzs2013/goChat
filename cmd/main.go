@@ -56,7 +56,9 @@ func main() {
 	r.HandleFunc("/login", handlers.HandleLogin)
 
 	// Messages route
-	r.Handle("/messages/history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMessageHistoryHandler)))
+	r.Handle("/messages/history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMessageHistory)))
+
+	r.HandleFunc("/messages", handlers.CreateMessage)
 
 	// WebSocket route
 	r.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
