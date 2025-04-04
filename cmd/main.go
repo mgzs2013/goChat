@@ -55,8 +55,8 @@ func main() {
 	// Authentication route
 	r.HandleFunc("/login", handlers.HandleLogin)
 
-	// Messages route
-	r.Handle("/messages/history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMessageHistory)))
+	// // Messages route
+	// r.Handle("/messages/history", middleware.AuthMiddleware(http.HandlerFunc(handlers.GetMessageHistory)))
 
 	r.HandleFunc("/messages", handlers.CreateMessage)
 
@@ -73,5 +73,4 @@ func main() {
 	log.Println("Server started on :8080")
 	wrappedRouter := middleware.CORS(r)
 	http.ListenAndServe(":8080", wrappedRouter)
-
 }

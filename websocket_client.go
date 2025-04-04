@@ -16,7 +16,7 @@ type Message struct {
 func main() {
 	// Replace with your WebSocket server URL
 	accessToken := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjdXN0b21LZXkiOiJteVN1cGVyU2VjcmV0S2V5IiwiZXhwIjoxNzQzMzg0NDI0LCJpZCI6Miwicm9sZSI6ImFkbWluIiwidXNlcm5hbWUiOiJhZG1pbnVzZXIifQ.BFg7m5Ce9jtL6OWpADJIgP5ZyY4vMZbnJlV5UdkjwuU" // Replace with the token from the CURL login response
-	url := fmt.Sprintf("ws://localhost:8080/ws?accessToken=%s", accessToken)
+	url := fmt.Sprintf("ws://localhost:5173/ws?accessToken=%s", accessToken)
 
 	// Connect to the WebSocket server
 	conn, _, err := websocket.DefaultDialer.Dial(url, nil)

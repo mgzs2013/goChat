@@ -30,18 +30,31 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	secret := "mySuperSecretKey"
 	var req LoginRequest
 
-	if r.Method != "POST" {
+	if r.Method != http.MethodPost {
 		RespondJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "This is not a valid method!"})
 		return
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		RespondJSON(w, http.StatusBadRequest, map[string]string{"error": "Cannot decode request body!"})
+		log.Printf("[ERROR] Cannot decode request body: %v", err)
+		RespondJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"error":   "Invalid request body",
+			"details": "Ensure the request body is valid JSON with 'username' and 'password' fields.",
+		})
 		return
 	}
 
 	req.Username = strings.TrimSpace(req.Username)
 	req.Password = strings.TrimSpace(req.Password)
+
+	if req.Username == "" || req.Password == "" {
+		log.Println("[ERROR] Username or password is empty")
+		RespondJSON(w, http.StatusBadRequest, map[string]interface{}{
+			"error":   "Invalid input",
+			"details": "Username and password cannot be empty.",
+		})
+		return
+	}
 
 	var ID int64
 	var role string
@@ -53,6 +66,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	} else {
 		log.Println("Authenticating user...")
 		var err error
+
 		ID, role, err = services.AuthenticateUser(req.Username, req.Password)
 		if err != nil {
 			log.Println("Login failed:", err)

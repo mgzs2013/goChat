@@ -31,7 +31,7 @@ func HandleWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	log.Println("[DEBUG] HandleWebsocket invoked")
 
 	// Extract the token from the query parameters
-	tokenString := r.URL.Query().Get("accessToken")
+	tokenString := r.URL.Query().Get("token")
 	if tokenString == "" {
 		log.Println("[ERROR] Access token is missing in query parameters")
 		http.Error(w, "Access token required", http.StatusBadRequest)

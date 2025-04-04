@@ -5,13 +5,17 @@ class WebSocketService {
     }
 
     
-    connect(accessToken) {
+    connect(wsUrl) {
         return new Promise((resolve, reject) => {
-            console.log("Attempting to connect WebSocket with access token:", accessToken);
-            if (!accessToken) {
-                console.error("[ERROR] No access token found");
+            
+            console.log("Attempting to connect WebSocket with access token:", wsUrl);
+            if (!wsUrl) {
+                console.error("[ERROR] No websocket URL found.");
                 return reject("No access token found");
             }
+
+            // Initialize the WebSocket instance with your URL
+            this.socket = new WebSocket(wsUrl);
 
             this.socket.onopen = () => {
                 console.log("[DEBUG] WebSocket connected");
@@ -59,6 +63,14 @@ class WebSocketService {
         }
     }
 
+    onmessage(callback) {
+        this.messageCallback = callback; // Store the callback
+        this.socket.onmessage = (event) => {
+            // Call the provided callback with the parsed message data
+            const message = JSON.parse(event.data); // Parse the message data
+            this.messageCallback(message); // Call the callback with the message
+        };
+    }
 
     disconnect() {
         if (this.socket) {
