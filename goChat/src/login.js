@@ -1,4 +1,5 @@
 import websocketService from "./services/websocketService";
+import stateManager from "../state";
 
 // Define action types as constants
 const ActionTypes = {
@@ -17,6 +18,8 @@ async function HandleLoginRequest() {
         const data = await loginUser(username, password); // Destructure directly
         console.log("Login successful, received access token:", data);
         localStorage.setItem("jwtToken", data.accessToken);
+
+        stateManager.setToken(data.accessToken);
 
         // Set up WebSocket connection after successful login
         await setupWebSocket(data.accessToken);
@@ -82,35 +85,6 @@ async function setupWebSocket(accessToken) {
     }
 }
 
-
-// Function to handle sending messages
-function sendMessage() {
-
-    if (!websocketService.socket || websocketService.socket.readyState !== WebSocket.OPEN) {
-        console.error("WebSocket is not connected.");
-        return; // Exit if the WebSocket is not open
-    }
-    
-    const messageInput = document.getElementById("message-input").value; // Get message input
-    console.log("Message:", messageInput)
-    if (messageInput === "") {
-        console.warn("Cannot send an empty message.");
-        return; // Exit if the message is empty
-    }
-
-    const payload = {
-        sender_id: 2, // Example sender ID
-        content: messageInput, // The actual message content
-        timestamp: new Date().toISOString(), // Add a timestamp
-    };
-
-    console.log("Sending payload:", payload); // Log the payload being sent
-
-    websocketService.sendMessage(messageInput); // Call the sendMessage method from WebSocketService
-    document.getElementById("message-input").value = ""; // Clear input
-}
-
-
 // Function to handle incoming WebSocket messages
 function handleWebSocketMessage(message) {
     if (message.type === ActionTypes.WELCOME) {
@@ -118,6 +92,12 @@ function handleWebSocketMessage(message) {
     } else if (message.type === ActionTypes.ERROR) {
         handleError(message.error);
     }
+}
+
+// Function to handle errors
+function handleError(error) {
+    console.error("Server error:", error);
+    alert(`Server error: ${error}`);
 }
 
 // Function to display a welcome message
@@ -130,28 +110,29 @@ function displayWelcomeMessage(content) {
     }
 }
 
-// Function to handle errors
-function handleError(error) {
-    console.error("Server error:", error);
-    alert(`Server error: ${error}`);
-}
 
-// Event listener for login form submission
+
+
+
+
+// Set up event listeners for page load
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("login-form").addEventListener("submit", async (event) => {
-        event.preventDefault(); // Prevent default form submission
-        await HandleLoginRequest(); // Trigger the login function
-    });
+    // Event listener for login form submission
+    const loginForm = document.getElementById("login-form");
+    if (loginForm) {
+        loginForm.addEventListener("submit", async (event) => {
+            event.preventDefault(); // Prevent default form submission
+            await HandleLoginRequest(); // Trigger the login function
+        });
+    }
+
+
+
+
 });
 
-// Add event listener for the message form submission
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("message-form").addEventListener("submit", (event) => {
-        event.preventDefault(); // Prevent default form submission
-        console.log("Send button clicked!"); // Debug log
-        sendMessage(); // Call the sendMessage function
-    });
-});
+
+
 
 
 

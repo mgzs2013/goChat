@@ -1,12 +1,22 @@
 class WebSocketService {
     constructor() {
-        this.socket = null;
-        this.messageCallback = null;
+        if (!WebSocketService.instance) {
+            this.socket = null;
+            this.messageCallback = null;
+            WebSocketService.instance = this; // Store the instance
+        }
+        return WebSocketService.instance; // Return the singleton instance
     }
+
 
     
     connect(wsUrl) {
         return new Promise((resolve, reject) => {
+
+            if (this.socket) {
+                console.log("WebSocket is already connected.");
+                return resolve(this.socket);
+            }
             
             console.log("Attempting to connect WebSocket with access token:", wsUrl);
             if (!wsUrl) {
@@ -33,7 +43,7 @@ class WebSocketService {
 
             this.socket.onmessage = (event) => {
                 const message = JSON.parse(event.data);
-                console.log("[DEBUG] Message from server:", event.data);
+                console.log("[DEBUG] Message from server:", message);
                 this.displayMessage(message); // Call displayMessage as a method of the class
             };
         });
@@ -47,21 +57,13 @@ class WebSocketService {
     }
 
     sendMessage(message) {
-        if (!this.socket) {
+        if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
             console.error("WebSocket is not initialized.");
             return; // Exit the function if the socket is not initialized
         }
-        if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-            const payload = {
-                sender_id: 2, 
-                content: message,
-                timestamp: new Date().toISOString(),
-            };
-            this.socket.send(JSON.stringify(payload));
-        } else {
-            console.error("WebSocket is not open. Ready state:", this.socket.readyState);
-        }
-    }
+            this.socket.send(message);
+        } 
+    
 
     onmessage(callback) {
         this.messageCallback = callback; // Store the callback
@@ -82,5 +84,5 @@ class WebSocketService {
 
 // Create a singleton instance
 const websocketService = new WebSocketService();
-
+// Object.freeze(websocketService); // Optional: Freeze the instance to prevent modifications
 export default websocketService;
