@@ -52,6 +52,9 @@ func main() {
 	// Setup router and define routes
 	r := http.NewServeMux()
 
+	// Registration route
+	r.HandleFunc("/register", handlers.RegisterUserHandler)
+
 	// Authentication route
 	r.HandleFunc("/login", handlers.HandleLogin)
 

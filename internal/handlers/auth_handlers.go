@@ -23,6 +23,8 @@ type LoginResponse struct {
 
 var secretKey string
 var db *sql.DB
+var ID int64
+var role string
 
 func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	log.Println("HandleLogin started")
@@ -56,28 +58,19 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ID int64
-	var role string
+	log.Println("Authenticating user...")
+	var err error
 
-	if req.Username == "adminuser" && req.Password == "adminpassword" {
-		log.Println("Admin user authenticated!")
-		ID = 2
-		role = "admin"
-	} else {
-		log.Println("Authenticating user...")
-		var err error
-
-		ID, role, err = services.AuthenticateUser(req.Username, req.Password)
-		if err != nil {
-			log.Println("Login failed:", err)
-			RespondJSON(w, http.StatusUnauthorized, map[string]interface{}{
-				"error":   "Invalid credentials",
-				"code":    401,
-				"details": "The provided username or password is incorrect"})
-			return
-		}
-		log.Printf("Authentication successful for user: %s (ID: %d, Role: %s)", req.Username, ID, role)
+	ID, role, err = services.AuthenticateUser(req.Username, req.Password)
+	if err != nil {
+		log.Println("Login failed:", err)
+		RespondJSON(w, http.StatusUnauthorized, map[string]interface{}{
+			"error":   "Invalid credentials",
+			"code":    401,
+			"details": "The provided username or password is incorrect"})
+		return
 	}
+	log.Printf("Authentication successful for user: %s (ID: %d, Role: %s)", req.Username, ID, role)
 
 	accessToken, refreshToken, err := services.GenerateToken(secret, ID, req.Username, role)
 	if err != nil {

@@ -1,5 +1,5 @@
 import websocketService from "./services/websocketService";
-import stateManager from "../state";
+
 
 // Define action types as constants
 const ActionTypes = {
@@ -19,7 +19,7 @@ async function HandleLoginRequest() {
         console.log("Login successful, received access token:", data);
         localStorage.setItem("jwtToken", data.accessToken);
 
-        stateManager.setToken(data.accessToken);
+        
 
         // Set up WebSocket connection after successful login
         await setupWebSocket(data.accessToken);
