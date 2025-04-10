@@ -101,11 +101,21 @@ func HandleWebsocket(hub *Hub, w http.ResponseWriter, r *http.Request) {
 				break
 			}
 
-			// Broadcast the message
-			hub.Broadcast <- models.Message{
-				ID:      user.ID,
-				Content: string(message),
+			msg := models.Message{
+
+				SenderID:  user.ID,
+				Content:   string(message),
+				Timestamp: time.Now(),
 			}
+
+			log.Println("[DEBUG] message through websocket:", msg)
+			err = services.StoreMessage(msg.SenderID, msg.Content, msg.Timestamp)
+			if err != nil {
+				log.Printf("[ERROR] Failed to store message: %v", err)
+				continue // Handle the error as needed
+			}
+			// Broadcast the message
+			hub.Broadcast <- msg
 		}
 	}()
 

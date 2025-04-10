@@ -46,7 +46,7 @@ function sendMessage() {
     }
 
     const payload = {
-        sender_id: 2, // Example sender ID
+        
         content: messageInput, // The actual message content
         timestamp: new Date().toISOString(), // Add a timestamp
     };

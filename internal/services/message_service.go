@@ -1,26 +1,25 @@
 package services
 
 import (
+	"fmt"
 	"goChat/internal/database"
+
 	"goChat/internal/models"
+	"log"
 	"strconv"
 	"time"
 )
 
-var msg struct {
-	SenderID  int64     `json:"sender_id"`
-	Content   string    `json:"content"`
-	Timestamp time.Time `json:"timestamp"`
-}
+func StoreMessage(SenderID int64, Content string, Timestamp time.Time) error {
+	log.Println("[DEBUG] StoreMessage is being invoked")
 
-func StoreMessage(msg models.Message) (int64, error) {
-	query := `
-        INSERT INTO messages (sender_id, content, timestamp) 
-        VALUES ($1, $2, $3, $4, DEFAULT) RETURNING id
-    `
-	var newID int64
-	err := database.Pool.QueryRow(query, msg.SenderID, msg.RecipientID, msg.ChatRoom, msg.Content).Scan(&newID)
-	return newID, err
+	// Use double quotes around "Message" to match the case
+	query := `INSERT INTO "Message" (sender_id, content, timestamp) VALUES ($1, $2, $3)`
+	_, err := database.Pool.Exec(query, SenderID, Content, Timestamp)
+	if err != nil {
+		return fmt.Errorf("failed to store message in database: %v", err)
+	}
+	return nil
 }
 
 func GetRecentMessages(limit string) ([]models.Message, error) {

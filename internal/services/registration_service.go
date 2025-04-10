@@ -29,7 +29,7 @@ func RegisterUser(username, password string) error {
 	query := "INSERT INTO users (username, password_hash) VALUES ($1, $2)"
 	_, err = database.Pool.Exec(query, username, hashedPassword)
 	if err != nil {
-		return fmt.Errorf("failed to store access token in database: %v", err)
+		return fmt.Errorf("failed to store user in database: %v", err)
 	}
 	return nil
 
