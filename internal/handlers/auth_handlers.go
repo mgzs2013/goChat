@@ -92,7 +92,7 @@ func HandleLogin(w http.ResponseWriter, r *http.Request) {
 	log.Printf("[DEBUG] Successfully validated claims: %v", claims)
 
 	// Respond with the tokens
-	jsonResponse := map[string]string{"accessToken": accessToken}
+	jsonResponse := map[string]string{"accessToken": accessToken, "username": req.Username}
 	json.NewEncoder(w).Encode(jsonResponse)
 
 }

@@ -17,6 +17,7 @@ async function HandleLoginRequest() {
     try {
         const data = await loginUser(username, password); // Destructure directly
         console.log("Login successful, received access token:", data);
+        localStorage.setItem("username", data.username);
         localStorage.setItem("jwtToken", data.accessToken);
 
 
