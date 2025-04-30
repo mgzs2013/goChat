@@ -19,10 +19,13 @@ async function HandleLoginRequest() {
         console.log("Login successful, received access token:", data);
         localStorage.setItem("jwtToken", data.accessToken);
 
-        
+
 
         // Set up WebSocket connection after successful login
         await setupWebSocket(data.accessToken);
+
+        // Redirect to the messaging page after successful login
+        window.location.href = '/message.html'; // Update this path as needed
     } catch (error) {
         console.error("Login Error:", error.message);
         // Handle error feedback to the user if needed
@@ -62,7 +65,7 @@ async function loginUser(username, password) {
 
 // Function to set up the WebSocket connection and message handling
 async function setupWebSocket(accessToken) {
-    
+
     const wsUrl = `ws://localhost:8080/ws?token=${accessToken}`;
     console.log("Connecting to WebSocket at:", wsUrl);
 

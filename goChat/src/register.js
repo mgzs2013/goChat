@@ -13,6 +13,7 @@ async function RegisterUserRequest() {
     try {
         const data = await RegisterUser(username, password); 
         console.log("Registration successful with username and password:", data);
+        window.location.href = '/index.html'; // Update this path as needed
        
     } catch (error) {
         console.error("Registration Error:", error.message);
@@ -39,6 +40,11 @@ async function RegisterUser(username, password) {
         // Attempt to read the response body as text to log the error
         const errorText = await response.text(); // Read the response as text
         throw new Error(`HTTP error! Status: ${response.status}, Details: ${errorText}`);
+    }
+
+    if (response.status === 204) {
+        // No content
+        throw new Error("No content returned from server.");
     }
 
     const data = await response.json(); // Parse the response JSON

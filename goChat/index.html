@@ -1,21 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>goChat</title>
-  </head>
-  <body>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>goChat</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      width: 300px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+
+    label {
+      margin-top: 10px;
+      display: block;
+      font-weight: bold;
+      color: #555;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0 15px 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      background-color: #007bff;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #error-message {
+      color: red;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .registration-link {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    .registration-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="login-container">
     <form id="login-form">
-        <label for="username">Username:</label>
-        <input type="text" id="username" required>
-        <br>
-        <label for="password">Password:</label>
-        <input type="password" id="password" required>
-        <br>
-        <button type="submit">Login</button>
+      <label for="username">Username:</label>
+      <input type="text" id="username" required>
+      <br>
+      <label for="password">Password:</label>
+      <input type="password" id="password" required>
+      <br>
+      <button type="submit">Login</button>
     </form>
     <div id="error-message" style="color: red;"></div>
-    <script type="module" src="/src/login.js"></script>
-    
-  </body>
+    <a href="/registration.html" class="registration-link">Don't have an account? Register here</a>
+  </div>
+  <script type="module" src="/src/login.js"></script>
+
+</body>
+
 </html>
